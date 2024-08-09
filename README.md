@@ -6,7 +6,7 @@ Atossa Proxy Client Transform Tunnel System
 
 # Projects:
 
-### [u3jit-core](https://github.com/u3jit-core)
+### [u3jit-core](https://github.com/claxpoint/u3jit-core) // [u3jit github](https://github.com/u3jit)
 > - [x] combination of dante and dockvpn Docker compose socks5 and vpn server
 > - [x] MTProto CONV
 > - [ ] AtossaPCT/T (Tunnel System .Prod)
