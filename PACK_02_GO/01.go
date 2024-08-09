@@ -38,3 +38,83 @@ func main() {
 
         // ... (send data to SOCKS proxy)
 }
+
+func socks5Handshake(conn net.Conn) error {
+        // Method selection
+        conn.Write([]byte{0x05, 0x01, 0x00}) // Version 5, 1 method, no authentication
+
+        // Read server response
+        buf := make([]byte, 2)
+        _, err := io.ReadFull(conn, buf)
+        if err != nil {
+                return err
+        }
+        if buf[0] != 0x05 {
+                return errors.New("invalid SOCKS5 version")
+        }
+        numMethods := int(buf[1])
+
+        // Read supported methods
+        methods := make([]byte, numMethods)
+        _, err = io.ReadFull(conn, methods)
+        if err != nil {
+                return err
+        }
+
+        // Select a method (e.g., no authentication)
+        conn.Write([]byte{0x05, 0x00})
+
+        // ... (handle authentication if required)
+
+        return nil
+}
+
+import (
+        "log"
+        "net"
+        // ... other imports
+)
+
+func main() {
+        // ...
+        defer func() {
+                if err != nil {
+                        log.Printf("Error: %v", err)
+                }
+        }()
+        // ...
+}
+
+// Assuming a simple username/password authentication
+func handleAuth(conn net.Conn) error {
+        // ... read authentication method
+        if method == 0x02 { // Username/password
+                // ... read username and password
+                // ... authenticate
+        }
+        // ... handle other methods
+        return nil
+}
+
+func handleConnect(conn net.Conn, req []byte) error {
+        // Parse CONNECT request
+        // ... extract destination address and port
+        // ... establish connection to destination
+        // ... send CONNECT reply
+        return nil
+}
+
+go func() {
+        buf := make([]byte, 4096)
+        for {
+                n, err := conn.Read(buf)
+                if err != nil {
+                    // Handle error
+                    return
+                }
+                // Forward data to destination
+            }
+        }()
+
+        // ... similar goroutine for reading from destination and writing to client
+
