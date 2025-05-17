@@ -1,0 +1,196 @@
+#----------------------------------------------------------------------------------------------
+# Installation of Cygwin.
+# V1.1 10/12/2007 Martin Aldrin
+# V1.2 23/06/2016 Erik Linder-Noren
+# V1.3 04/05/2022 Finn Magnusson (added minttyrc settings)
+#----------------------------------------------------------------------------------------------
+use File::Copy;
+use Term::ANSIColor qw(:constants);
+use Time::local;
+#use strict;
+
+my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+$year+=1900;
+$cygwinpath = "c:/cygwin64";
+$startcygwin1 = "$cygwinpath/bin/bash.exe -c \"echo opening and closing cygwin...done.\"";
+$startcygwin2 = "$cygwinpath/bin/mintty.exe -e /bin/bash --login -i \"echo opening and closing cygwin...done.\"";
+#$signum = $ENV{'USERNAME'};
+$signum = `$cygwinpath/bin/whoami`; chomp($signum);  $signum =~ s/^.*\+//;
+$permissions 	= "$cygwinpath/bin/chmod 755 $cygwinpath/cygwin.bat";
+$installbackup = "installbackup";
+$date_time = "$year-$mon-$mday\_$hour.$min";
+$mkdir = "$cygwinpath/bin/mkdir.exe -p $cygwinpath/tmp/$installbackup/$date_time";
+$mkuser = "$cygwinpath/bin/mkdir.exe -p $cygwinpath/home/$signum";
+
+#CYGWIN.BAT
+$cygwinbat ="\@echo off\n
+C:
+chdir C:\\cygwin64\\bin\n
+set USER=$signum
+set HOME=/home/$signum
+set SHELL=/bin/bash
+mintty -e /bin/bash --login -i";
+#PROFILE
+$profile = "export PATH=\"/usr/bin:/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/bin/X11:/usr/local/sbin:/root/bin:\$PATH\"\n
+for i in /etc/profile.d/*.sh ; do
+  if \[ -f \$i \]; then
+    . \$i
+  fi
+done
+\nexport USER=$signum
+export HOME=/home/$signum
+export SHELL=/bin/bash
+mkdir -p \$HOME\ncd \$HOME
+source \$HOME/.bashrc";	
+
+#BASHRC
+$bashrc='unset PROMPT_COMMAND
+export PS1="\\[\\033[1m\\][\\w]\\\\$\\[\\033[0m\\] "
+alias ls="ls -FX"
+set -o notify
+set -o ignoreeof
+shopt -s cdspell
+shopt -s cdable_vars
+shopt -s checkhash
+shopt -s checkwinsize
+shopt -s sourcepath
+shopt -s histappend
+';
+$bashrc="$bashrc
+export PATH=\$PATH:/home/$signum/moshell
+";
+#INPUTRC
+$inputrc = "set bell-style visible
+set convert-meta Off
+set output-meta On
+set input-meta On
+set completion-ignore-case on
+set completion-query-items 150
+set mark-directories on
+set visible-stats On
+set show-all-if-ambiguous On
+set expand-tilde On
+\"\\e\[D\": backward-char
+\"\\e\[C\": forward-char
+\"\\e\[A\": history-search-backward
+\"\\e\[B\": history-search-forward
+\"\\e\[7~\": beginning-of-line
+\"\\e\[8~\": end-of-line
+\"\\e\[1~\": beginning-of-line
+\"\\e\[4~\": end-of-line
+\"\\e\[3~\": delete-char
+\"\\e\[2~\": menu-complete
+\"\\M-\[2~\": paste-from-clipboard # Insert
+\"\\M-q\": menu-complete
+\"\\C-d\": delete-char
+\"\\C-l\": clear-screen
+\"\\C-xdf\": dump-functions
+\"\\C-xdv\": dump-variables
+\"\\C-xdm\": dump-macros
+";
+
+#minttyrc
+$minttyrc = "Term=xterm-256color
+Font=Lucida Console
+BoldBlack=0,43,54
+BoldWhite=253,246,227
+BoldAsFont=-1
+ForegroundColour=255,255,255
+CursorColour=255,255,255
+FontHeight=12
+ScrollbackLines=65000
+ScrollMod=shift
+PgUpDnScroll=yes
+Scrollbar=right
+ClearSelectionOnInput=no
+Locale=C
+Charset=UTF-8
+BoldAsFont=yes
+RightClickAction=extend
+";
+
+
+if(-e "$cygwinpath/bin/mintty.exe"){
+	if(-e "$cygwinpath/bin/unzip.exe"){
+	}
+}else{
+	print RED "File $cygwinpath/bin/mintty.exe or $cygwinpath/bin/unzip.exe is missing,\nreinstall cygwin.\n"; print WHITE"";
+	goto ENDFILE;
+}
+
+@check;
+system($mkdir);
+system($startcygwin1); #Start Cygwin.
+
+
+#CYGWINBAT
+	$movecygwinbat 	= "$cygwinpath/bin/mv.exe $cygwinpath/cygwin.bat $cygwinpath/tmp/$installbackup/$date_time/cygwin.bat";
+	OpenFile("cygwin.bat","$movecygwinbat","$cygwinbat","tmp");
+	system($permissions); #Change permissions.
+	push(@check, Checkfile("$cygwinpath/cygwin.bat"));	
+#PROFILE
+	$moveprofile 	= "$cygwinpath/bin/mv.exe $cygwinpath/etc/profile $cygwinpath/tmp/$installbackup/$date_time/profile";
+	OpenFile("/etc/profile","$moveprofile","$profile");
+	push(@check, Checkfile("$cygwinpath/etc/profile"));
+	`set USER=$signum
+	set HOME=/home/$signum
+	
+	set SHELL=/bin/bash`;
+	system($startcygwin2); #Start Cygwin.
+	
+#USERFOLDER
+	if(!(-d "$cygwinpath/home/$signum")){
+		system($mkuser);
+	}
+#BASHRC
+	if(-e "$cygwinpath/home/$signum/.bashrc"){
+		$movebashrc	= "$cygwinpath/bin/mv.exe $cygwinpath/home/$signum/.bashrc $cygwinpath/tmp/$installbackup/$date_time/.bashrc";
+	}
+	OpenFile("/home/$signum/.bashrc","$movebashrc","$bashrc");
+	push(@check, Checkfile("$cygwinpath/home/$signum/.bashrc"));
+#INPUTRC
+	if(-e "$cygwinpath/home/$signum/.inputrc"){
+		$moveinputrc	= "$cygwinpath/bin/mv.exe $cygwinpath/home/$signum/.inputrc $cygwinpath/tmp/$installbackup/$date_time/.inputrc";
+	}
+	OpenFile("/home/$signum/.inputrc","$moveinputrc","$inputrc");
+	push(@check, Checkfile("$cygwinpath/home/$signum/.inputrc"));
+
+#MINTTYRC
+	if(-e "$cygwinpath/home/$signum/.minttyrc"){
+		$moveminttyrc	= "$cygwinpath/bin/mv.exe $cygwinpath/home/$signum/.minttyrc $cygwinpath/tmp/$installbackup/$date_time/.minttyrc";
+	}	
+	OpenFile("/home/$signum/.minttyrc","$moveminttyrc","$minttyrc");
+	push(@check, Checkfile("$cygwinpath/home/$signum/.minttyrc"));
+
+
+if(@check != null){
+	print RED"FAILED, FILES IS MISSING\n";
+	print @check; print WHITE"";
+	goto ENDFILE;
+}else{
+	print GREEN"Patching of files seems to be ok!\n"; print WHITE"";
+}
+sub OpenFile(){
+	my ($file,$move,$var) =@_;
+	system($move);
+	open(NEWFILE, ">$cygwinpath/$file");
+		print NEWFILE "$var";
+		
+		
+	close(NEWFILE);
+}
+sub Checkfile(){
+	my ($file) = @_;
+	#print "$file\n";
+	if(-e "$file"){
+		
+	}
+	else{
+		return "$file\n";
+	}
+}
+	
+
+ENDFILE:
+	exit;
+
